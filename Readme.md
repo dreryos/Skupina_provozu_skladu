@@ -2,4 +2,4 @@
 
 Jednoduchý program pro výpočet kategorizace skladů pomocí normy ČSN XYZ. Používá jednoduché Gui napsané v Pythonu s využitím knihovny PySide6.
 
-![Screenshot](./title.png)
+![Title](./title.png) ![Proccesing](./processing.png)
