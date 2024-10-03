@@ -1,5 +1,6 @@
 from PySide6.QtCore import QSize, Qt
-from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QMainWindow, QVBoxLayout, QHBoxLayout, QLabel, QCheckBox, QTableWidget, QLineEdit, QFormLayout
+from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QMainWindow, QVBoxLayout, QHBoxLayout, QLabel, QCheckBox, QTableWidget, QLineEdit, QFormLayout, QTableWidgetItem
+from PySide6.QtGui import QDoubleValidator
 from PySide6.QtSvgWidgets import QSvgWidget
 
 # Only needed for access to command line arguments
@@ -33,13 +34,33 @@ class ProcessWindow(QWidget):
         self.q_font.setBold(True)
         self.q_label.setFont(self.q_font)
         self.layout.addWidget(self.q_label)
-        ## Tabulka
+
+        # Formulář pro vstupní hodnoty a tabulka vedle sebe
+        self.q_layout = QHBoxLayout()
+
+        # Formulář pro vstupní hodnoty
+        self.q_form_layout = QFormLayout()
+        self.mi_input = QLineEdit()
+        self.hi_input = QLineEdit()
+        self.mi2_input = QLineEdit()
+        self.mi_input.setValidator(QDoubleValidator())
+        self.hi_input.setValidator(QDoubleValidator())
+        self.mi2_input.setValidator(QDoubleValidator())
+        self.q_form_layout.addRow("mᵢ [kg·m⁻²·min⁻¹]:", self.mi_input)
+        self.q_form_layout.addRow("Hᵢ [MJ·kg⁻¹]:", self.hi_input)
+        self.q_form_layout.addRow("Mᵢ [kg]:", self.mi2_input)
+        self.q_layout.addLayout(self.q_form_layout)
+
+        # Tabulka
         self.q_table = QTableWidget(self)
-        self.q_table.setRowCount(3)
-        self.q_table.setVerticalHeaderLabels(["mᵢ [kg·m⁻²·min⁻¹]", "Hᵢ [MJ·kg⁻¹]", "Mᵢ [kg]"])
-        # TODO: přidávání materiálů a zarovnání tabulky na 3x5
-        self.layout.addWidget(self.q_table)
-        ## Tlačítka
+        self.q_table.setRowCount(0)
+        self.q_table.setColumnCount(3)
+        self.q_table.setHorizontalHeaderLabels(["mᵢ", "Hᵢ", "Mᵢ"])
+        self.q_layout.addWidget(self.q_table)
+
+        self.layout.addLayout(self.q_layout)
+
+        # Tlačítka
         self.q_butts = QHBoxLayout()
         self.q_butt_plus = QPushButton("Přidat materiál")
         self.q_butt_minus = QPushButton("Odebrat poslední materiál")
@@ -47,25 +68,53 @@ class ProcessWindow(QWidget):
         self.q_butts.addWidget(self.q_butt_minus)
         self.layout.addLayout(self.q_butts)
 
+        # Přidání materiálu do tabulky
+        self.q_butt_plus.clicked.connect(self.add_material_q)
+        self.q_butt_minus.clicked.connect(self.remove_material_q)
+
+
         # Vstupní hodnoty pro p_n
         self.p_label = QLabel("Vstupní hodnoty pro výpočet p<sub>n</sub>")
         self.p_font = self.p_label.font()
         self.p_font.setBold(True)
         self.p_label.setFont(self.p_font)
         self.layout.addWidget(self.p_label)
-        ## Tabulka
+        
+        # Formulář pro vstupní hodnoty a tabulka vedle sebe
+        self.p_layout = QHBoxLayout()
+        
+        # Formulář pro vstupní hodnoty
+        self.p_form_layout = QFormLayout()
+        self.m_input = QLineEdit()
+        self.k_input = QLineEdit()
+        self.m_input.setValidator(QDoubleValidator())
+        self.k_input.setValidator(QDoubleValidator())
+        self.p_form_layout.addRow("Mᵢ [kg]:", self.m_input)
+        self.p_form_layout.addRow("Kᵢ:", self.k_input)
+        self.p_layout.addLayout(self.p_form_layout)
+        
+        # Tabulka
+        #TODO: aby tabulka nevypadala jako tak divně
         self.p_table = QTableWidget(self)
-        self.p_table.setRowCount(2)
-        self.p_table.setVerticalHeaderLabels(["Mᵢ [kg]", "Kᵢ"])
-        # TODO: přidávání materiálů a zarovnání tabulky na 2x5
-        self.layout.addWidget(self.p_table)
-        ## Tlačítka
+        self.p_table.setRowCount(0)
+        self.p_table.setColumnCount(2)
+        self.p_table.setHorizontalHeaderLabels(["Mᵢ", "Kᵢ"])
+        self.p_layout.addWidget(self.p_table)
+        
+        self.layout.addLayout(self.p_layout)
+        
+        # Tlačítka
         self.p_butts = QHBoxLayout()
         self.p_butt_plus = QPushButton("Přidat materiál")
         self.p_butt_minus = QPushButton("Odebrat poslední materiál")
         self.p_butts.addWidget(self.p_butt_plus)
         self.p_butts.addWidget(self.p_butt_minus)
         self.layout.addLayout(self.p_butts)
+        
+        # Přidání materiálu do tabulky
+        self.p_butt_plus.clicked.connect(self.add_material_p)
+        self.p_butt_minus.clicked.connect(self.remove_material_p)
+        
 
         # Plocha
         self.surface_line_edit = QLineEdit()
@@ -101,6 +150,45 @@ class ProcessWindow(QWidget):
         self.layout.addLayout(self.skupina_layout)
         
         self.setLayout(self.layout)
+
+    def add_material_q(self):
+        mi_value = self.mi_input.text().replace(",", ".")
+        hi_value = self.hi_input.text().replace(",", ".")
+        mi2_value = self.mi2_input.text().replace(",", ".")
+        if mi_value and hi_value and mi2_value:
+            self._extracted_from_add_material_q_6(mi_value, hi_value, mi2_value)
+
+    # TODO Rename this here and in `add_material_q`
+    def _extracted_from_add_material_q_6(self, mi_value, hi_value, mi2_value):
+        row_position = self.q_table.rowCount()
+        self.q_table.insertRow(row_position)
+        self.q_table.setItem(row_position, 0, QTableWidgetItem(mi_value))
+        self.q_table.setItem(row_position, 1, QTableWidgetItem(hi_value))
+        self.q_table.setItem(row_position, 2, QTableWidgetItem(mi2_value))
+        self.mi_input.clear()
+        self.hi_input.clear()
+        self.mi2_input.clear()
+
+    def remove_material_q(self):
+        row_position = self.q_table.rowCount()
+        if row_position > 0:
+            self.q_table.removeRow(row_position - 1)
+
+    def add_material_p(self):
+        m_value = self.m_input.text().replace(",", ".")
+        k_value = self.k_input.text().replace(",", ".")
+        if m_value and k_value:
+            row_position = self.p_table.rowCount()
+            self.p_table.insertRow(row_position)
+            self.p_table.setItem(row_position, 0, QTableWidgetItem(m_value))
+            self.p_table.setItem(row_position, 1, QTableWidgetItem(k_value))
+            self.m_input.clear()
+            self.k_input.clear()
+        
+    def remove_material_p(self):
+        row_position = self.p_table.rowCount()
+        if row_position > 0:
+            self.p_table.removeRow(row_position - 1)
 
 
 # Subclass QMainWindow to customize your application's main window
