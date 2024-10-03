@@ -156,10 +156,9 @@ class ProcessWindow(QWidget):
         hi_value = self.hi_input.text().replace(",", ".")
         mi2_value = self.mi2_input.text().replace(",", ".")
         if mi_value and hi_value and mi2_value:
-            self._extracted_from_add_material_q_6(mi_value, hi_value, mi2_value)
+            self._insert_row_into_q_table(mi_value, hi_value, mi2_value)
 
-    # TODO Rename this here and in `add_material_q`
-    def _extracted_from_add_material_q_6(self, mi_value, hi_value, mi2_value):
+    def _insert_row_into_q_table(self, mi_value, hi_value, mi2_value):
         row_position = self.q_table.rowCount()
         self.q_table.insertRow(row_position)
         self.q_table.setItem(row_position, 0, QTableWidgetItem(mi_value))
