@@ -1,5 +1,5 @@
 from PySide6.QtCore import QSize, Qt
-from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QMainWindow, QVBoxLayout, QHBoxLayout, QLabel, QCheckBox, QTableWidget, QLineEdit, QFormLayout, QTableWidgetItem
+from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QMainWindow, QVBoxLayout, QHBoxLayout, QLabel, QCheckBox, QTableWidget, QLineEdit, QFormLayout, QTableWidgetItem, QHeaderView, QMessageBox
 from PySide6.QtGui import QDoubleValidator
 from PySide6.QtSvgWidgets import QSvgWidget
 
@@ -8,10 +8,6 @@ from PySide6.QtSvgWidgets import QSvgWidget
 
 # Okno které počítá
 class ProcessWindow(QWidget):
-    """
-    This "window" is a QWidget. If it has no parent, it
-    will appear as a free-floating window as we want.
-    """
     def __init__(self):
         super().__init__()
         self.layout = QVBoxLayout()
@@ -22,10 +18,12 @@ class ProcessWindow(QWidget):
         self.riziko_font.setBold(True)
         self.riziko_label.setFont(self.riziko_font)
         self.layout.addWidget(self.riziko_label)
+        self.riziko_detail = QLabel("Je potřeba zaškrtnout alespoň jednu z možností.")
+        self.layout.addWidget(self.riziko_detail)
         ## Checkboxy
-        self.taue = QCheckBox("τe ekvivaletní doby trvání požáru")
+        self.taue = QCheckBox("τe ekvivalentní doby trvání požáru")
         self.layout.addWidget(self.taue)
-        self.tau = QCheckBox("τ ekvivaletní doby trvání požáru")
+        self.tau = QCheckBox("τ pravděpodobné doby trvání požáru")
         self.layout.addWidget(self.tau)
 
         # Vstupní hodnoty pro q
@@ -35,10 +33,10 @@ class ProcessWindow(QWidget):
         self.q_label.setFont(self.q_font)
         self.layout.addWidget(self.q_label)
 
-        # Formulář pro vstupní hodnoty a tabulka vedle sebe
+        # Formulář pro vstupní hodnoty a tabulka vedle sebe Q
         self.q_layout = QHBoxLayout()
 
-        # Formulář pro vstupní hodnoty
+        # Formulář pro vstupní hodnoty Q
         self.q_form_layout = QFormLayout()
         self.mi_input = QLineEdit()
         self.hi_input = QLineEdit()
@@ -51,8 +49,13 @@ class ProcessWindow(QWidget):
         self.q_form_layout.addRow("Mᵢ [kg]:", self.mi2_input)
         self.q_layout.addLayout(self.q_form_layout)
 
-        # Tabulka
+        # Tabulka Q
         self.q_table = QTableWidget(self)
+        self.q_table.setColumnCount(3)
+        self.q_table.setHorizontalHeaderLabels(["mᵢ", "Hᵢ", "Mᵢ"])
+        self.q_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.q_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
+        self.q_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
         self.q_table.setRowCount(0)
         self.q_table.setColumnCount(3)
         self.q_table.setHorizontalHeaderLabels(["mᵢ", "Hᵢ", "Mᵢ"])
@@ -60,7 +63,7 @@ class ProcessWindow(QWidget):
 
         self.layout.addLayout(self.q_layout)
 
-        # Tlačítka
+        # Tlačítka Q
         self.q_butts = QHBoxLayout()
         self.q_butt_plus = QPushButton("Přidat materiál")
         self.q_butt_minus = QPushButton("Odebrat poslední materiál")
@@ -68,7 +71,7 @@ class ProcessWindow(QWidget):
         self.q_butts.addWidget(self.q_butt_minus)
         self.layout.addLayout(self.q_butts)
 
-        # Přidání materiálu do tabulky
+        # Přidání materiálu do tabulky Q
         self.q_butt_plus.clicked.connect(self.add_material_q)
         self.q_butt_minus.clicked.connect(self.remove_material_q)
 
@@ -94,11 +97,12 @@ class ProcessWindow(QWidget):
         self.p_layout.addLayout(self.p_form_layout)
         
         # Tabulka
-        #TODO: aby tabulka nevypadala jako tak divně
         self.p_table = QTableWidget(self)
         self.p_table.setRowCount(0)
         self.p_table.setColumnCount(2)
-        self.p_table.setHorizontalHeaderLabels(["Mᵢ", "Kᵢ"])
+        self.p_table.setHorizontalHeaderLabels(["Mᵢ", "Kᵢ"])        
+        self.p_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.p_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
         self.p_layout.addWidget(self.p_table)
         
         self.layout.addLayout(self.p_layout)
@@ -125,6 +129,9 @@ class ProcessWindow(QWidget):
         # Tlačítko pro výpočet
         self.calc_butt = QPushButton("Vypočítat")
         self.layout.addWidget(self.calc_butt, alignment=Qt.AlignCenter)
+        self.calc_butt.clicked.connect(self.calculate_q)
+        self.calc_butt.clicked.connect(self.calculate_p)        
+        self.calc_butt.clicked.connect(self.calculate_skupina_skladu)
 
         # Výstupní hodnoty
         self.result_label = QLabel("Výstupní hodnoty")
@@ -152,11 +159,13 @@ class ProcessWindow(QWidget):
         self.setLayout(self.layout)
 
     def add_material_q(self):
-        mi_value = self.mi_input.text().replace(",", ".")
-        hi_value = self.hi_input.text().replace(",", ".")
-        mi2_value = self.mi2_input.text().replace(",", ".")
+        mi_value = self.mi_input.text()
+        hi_value = self.hi_input.text()
+        mi2_value = self.mi2_input.text()
         if mi_value and hi_value and mi2_value:
             self._insert_row_into_q_table(mi_value, hi_value, mi2_value)
+        else:
+            self.error_missing_data()
 
     def _insert_row_into_q_table(self, mi_value, hi_value, mi2_value):
         row_position = self.q_table.rowCount()
@@ -174,21 +183,108 @@ class ProcessWindow(QWidget):
             self.q_table.removeRow(row_position - 1)
 
     def add_material_p(self):
-        m_value = self.m_input.text().replace(",", ".")
-        k_value = self.k_input.text().replace(",", ".")
+        m_value = self.m_input.text()
+        k_value = self.k_input.text()
         if m_value and k_value:
-            row_position = self.p_table.rowCount()
-            self.p_table.insertRow(row_position)
-            self.p_table.setItem(row_position, 0, QTableWidgetItem(m_value))
-            self.p_table.setItem(row_position, 1, QTableWidgetItem(k_value))
-            self.m_input.clear()
-            self.k_input.clear()
+            self._insert_row_into_p_table(m_value, k_value)
+        else:
+            self.error_missing_data()
+
+    def _insert_row_into_p_table(self, m_value, k_value):
+        row_position = self.p_table.rowCount()
+        self.p_table.insertRow(row_position)
+        self.p_table.setItem(row_position, 0, QTableWidgetItem(m_value))
+        self.p_table.setItem(row_position, 1, QTableWidgetItem(k_value))
+        self.m_input.clear()
+        self.k_input.clear()
         
     def remove_material_p(self):
         row_position = self.p_table.rowCount()
         if row_position > 0:
             self.p_table.removeRow(row_position - 1)
+    
+    def error_missing_data(self):
+        error_dialog = QMessageBox()
+        error_dialog.setIcon(QMessageBox.Critical)
+        error_dialog.setText("Chyba")
+        error_dialog.setInformativeText("Všechny hodnoty musí být vyplněny.")
+        error_dialog.setWindowTitle("Chyba")
+        error_dialog.exec()
 
+    def calculate_q(self):
+        mi_sum = sum(float(self.q_table.item(row, 0).text().replace(',', '.')) for row in range(self.q_table.rowCount()))
+        hi_sum = sum(float(self.q_table.item(row, 1).text().replace(',', '.')) for row in range(self.q_table.rowCount()))
+        mi2_sum = sum(float(self.q_table.item(row, 2).text().replace(',', '.')) for row in range(self.q_table.rowCount()))
+        
+        if mi_sum != 0:
+            q_value = (mi_sum * hi_sum * mi2_sum) / (60 * mi2_sum)
+            self.q_result.setText(f"{q_value:.2f}".replace('.', ','))
+        else:
+            self.q_result.setText("0")
+
+    def calculate_p(self):
+        mi_sum_p = sum(float(self.p_table.item(row, 0).text().replace(',', '.')) for row in range(self.p_table.rowCount()))
+        ki_sum_p = sum(float(self.p_table.item(row, 1).text().replace(',', '.')) for row in range(self.p_table.rowCount()))
+        surface_value = self.surface_line_edit.text().replace(',', '.')
+        
+        if not surface_value:
+            self.error_missing_data()
+            return
+        
+        try:
+            S = float(surface_value)
+        except ValueError:
+            self.error_missing_data()
+            return
+        
+        if mi_sum_p != 0:
+            pn_value = (mi_sum_p * ki_sum_p) / S
+            self.pn_result.setText(f"{pn_value:.2f}".replace('.', ','))
+        else:
+            self.pn_result.setText("0")
+    
+    def calculate_skupina_skladu(self):
+        if not (self.taue.isChecked() or self.tau.isChecked()):
+            self.error_missing_data()
+            return
+
+        q_value = float(self.q_result.text().replace(',', '.'))
+        pn_value = float(self.pn_result.text().replace(',', '.'))
+
+        if self.taue.isChecked():
+            if q_value <= 0.5:
+                self.skupina_result.setText("I")
+            elif q_value <= 0.1:
+                self.skupina_result.setText("II")
+            elif q_value <= 0.2:
+                self.skupina_result.setText("III")
+            elif q_value <= 0.4:
+                self.skupina_result.setText("IV")
+            elif q_value <= 0.7:
+                self.skupina_result.setText("V")
+            elif q_value <= 0.9:
+                self.skupina_result.setText("VI")
+            elif q_value > 0.9:
+                self.skupina_result.setText("VII")
+            else:
+                self.skupina_result.setText("N/A")
+        elif self.tau.isChecked():
+            if q_value <= 0.5 and pn_value <= 90:
+                self.skupina_result.setText("I")
+            elif q_value <= 0.1 and pn_value <= 180:
+                self.skupina_result.setText("II")
+            elif q_value <= 0.2 and pn_value <= 270:
+                self.skupina_result.setText("III")
+            elif q_value <= 0.4:
+                self.skupina_result.setText("IV")
+            elif q_value <= 0.7:
+                self.skupina_result.setText("V")
+            elif q_value <= 0.9:
+                self.skupina_result.setText("VI")
+            elif q_value > 0.9:
+                self.skupina_result.setText("VII")
+            else:
+                self.skupina_result.setText("N/A")
 
 # Subclass QMainWindow to customize your application's main window
 class MainWindow(QMainWindow):
