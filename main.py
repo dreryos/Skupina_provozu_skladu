@@ -1,5 +1,5 @@
 from PySide6.QtCore import QSize, Qt
-from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QMainWindow, QVBoxLayout, QHBoxLayout, QLabel, QCheckBox, QTableWidget, QLineEdit, QFormLayout, QTableWidgetItem, QHeaderView, QMessageBox
+from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QMainWindow, QVBoxLayout, QHBoxLayout, QLabel, QCheckBox, QTableWidget, QLineEdit, QFormLayout, QTableWidgetItem, QHeaderView, QMessageBox, QStyle
 from PySide6.QtGui import QDoubleValidator, QIcon, QPixmap
 from PySide6.QtSvgWidgets import QSvgWidget
 
@@ -38,7 +38,7 @@ class ProcessWindow(QWidget):
         self.riziko_font.setBold(True)
         self.riziko_label.setFont(self.riziko_font)
         self.layout.addWidget(self.riziko_label)
-        self.riziko_detail = QLabel("Je potřeba zaškrtnout alespoň jednu z možností.")
+        self.riziko_detail = QLabel("Je potřeba zaškrtnout alespoň jednu z možností")
         self.layout.addWidget(self.riziko_detail)
         ## Checkboxy
         self.taue = QCheckBox("τe ekvivalentní doby trvání požáru")
@@ -51,6 +51,7 @@ class ProcessWindow(QWidget):
         self.q_font = self.q_label.font()
         self.q_font.setBold(True)
         self.q_label.setFont(self.q_font)
+        self.q_label.setToolTip("Průměrný tepelný výkon q v MW∙m² odpovídá průměrnému tepelnému výkonu dosaženému hořením skladovaného materiálu na 1 m² odhořívané plochy a určuje se pomocí následující rovnice: <b>q=m∙Hₚ/60</b>. \nV případě výskytu různých materiálů, se stanoví průměrné hodnoty v závislosti na jejich hmotnosti podle rovnice: <b>q=∑mᵢ∙Hᵢ∙Mᵢ/60∙∑Mᵢ</b>.")
         self.layout.addWidget(self.q_label)
 
         # Formulář pro vstupní hodnoty a tabulka vedle sebe Q
@@ -59,8 +60,11 @@ class ProcessWindow(QWidget):
         # Formulář pro vstupní hodnoty Q
         self.q_form_layout = QFormLayout()
         self.mi_input = QLineEdit()
+        self.mi_input.setToolTip("Hmotnost odhořelá z 1 m² povrchu za 1 minutu i-tého materiálu podle přílohy D ČSN 73 0804 a pro obalové materiály podle ČSN 73 0845.")
         self.hi_input = QLineEdit()
+        self.hi_input.setToolTip("Průměrná hodnota výhřevnosti i-té hořlavé látky podle ČSN 73 0824.")
         self.mi2_input = QLineEdit()
+        self.mi2_input.setToolTip("Hmotnost i-té hořlavé látky.")
         self.mi_input.setValidator(QDoubleValidator())
         self.hi_input.setValidator(QDoubleValidator())
         self.mi2_input.setValidator(QDoubleValidator())
@@ -101,6 +105,7 @@ class ProcessWindow(QWidget):
         self.p_font = self.p_label.font()
         self.p_font.setBold(True)
         self.p_label.setFont(self.p_font)
+        self.p_label.setToolTip("Nahodilé požární zatížení p<sub>n</sub>v kg·m⁻² se určuje podle rovnice <b>p<sub>n</sub>=(∑ʲᵢ₌₁∙Mᵢ∙Kᵢ)/S</b>, která odpovídá rovnici ČSN 73 0804 ed.2.")
         self.layout.addWidget(self.p_label)
         
         # Formulář pro vstupní hodnoty a tabulka vedle sebe
@@ -109,7 +114,9 @@ class ProcessWindow(QWidget):
         # Formulář pro vstupní hodnoty
         self.p_form_layout = QFormLayout()
         self.m_input = QLineEdit()
+        self.m_input.setToolTip("Hmotnost i-té hořlavé látky.")
         self.k_input = QLineEdit()
+        self.k_input.setToolTip("Součinitel ekvivalentního množství dřeva i-tého druhu hořlavé látky podle ČSN 73 0824.")
         self.m_input.setValidator(QDoubleValidator())
         self.k_input.setValidator(QDoubleValidator())
         self.p_form_layout.addRow("Mᵢ [kg]:", self.m_input)
@@ -142,6 +149,8 @@ class ProcessWindow(QWidget):
 
         # Plocha
         self.surface_line_edit = QLineEdit()
+        self.surface_line_edit.setValidator(QDoubleValidator())
+        self.surface_line_edit.setToolTip("Celková půdorysná plocha požárního úseku.")
         self.surface_layout = QFormLayout()
         self.surface_layout.addRow("S [m<sup>2</sup>]:", self.surface_line_edit)
         self.layout.addLayout(self.surface_layout)
