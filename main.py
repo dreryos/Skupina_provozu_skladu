@@ -1,15 +1,35 @@
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QMainWindow, QVBoxLayout, QHBoxLayout, QLabel, QCheckBox, QTableWidget, QLineEdit, QFormLayout, QTableWidgetItem, QHeaderView, QMessageBox
-from PySide6.QtGui import QDoubleValidator
+from PySide6.QtGui import QDoubleValidator, QIcon, QPixmap
 from PySide6.QtSvgWidgets import QSvgWidget
 
 # Only needed for access to command line arguments
-# import sys
+import os
+import sys
+
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
+
+# You need one (and only one) QApplication instance per application.
+# Pass in sys.argv to allow command line arguments for your app.
+# If you know you won't use command line arguments QApplication([]) works too.
+app = QApplication([])
+
+main_pixmap = QPixmap(resource_path("symbol_cvut_konturova_verze.ico"))
+main_icon = QIcon(main_pixmap)
 
 # Okno které počítá
 class ProcessWindow(QWidget):
     def __init__(self):
         super().__init__()
+        self.setWindowIcon(main_icon)
+        self.setWindowTitle("Výpočet skupiny provozu skladů")
+
         self.layout = QVBoxLayout()
 
         # Určení požárního rizika
@@ -211,6 +231,14 @@ class ProcessWindow(QWidget):
         error_dialog.setWindowTitle("Chyba")
         error_dialog.exec()
 
+    def error_missing_tau(self):
+        error_dialog = QMessageBox()
+        error_dialog.setIcon(QMessageBox.Critical)
+        error_dialog.setText("Chyba")
+        error_dialog.setInformativeText("Musí být zaškrtnuto alespoň jedno určení požárního rizika.")
+        error_dialog.setWindowTitle("Chyba")
+        error_dialog.exec()
+
     def calculate_q(self):
         mi_sum = sum(float(self.q_table.item(row, 0).text().replace(',', '.')) for row in range(self.q_table.rowCount()))
         hi_sum = sum(float(self.q_table.item(row, 1).text().replace(',', '.')) for row in range(self.q_table.rowCount()))
@@ -245,7 +273,7 @@ class ProcessWindow(QWidget):
     
     def calculate_skupina_skladu(self):
         if not (self.taue.isChecked() or self.tau.isChecked()):
-            self.error_missing_data()
+            self.error_missing_tau()
             return
 
         q_value = float(self.q_result.text().replace(',', '.'))
@@ -290,7 +318,8 @@ class ProcessWindow(QWidget):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-
+    
+        self.setWindowIcon(main_icon)
         self.setWindowTitle("Skupina provozu skladů")
 
         # Horizontální layout
@@ -326,7 +355,7 @@ class MainWindow(QMainWindow):
         self.layout.addWidget(self.kat_label)
 
         ## Logo
-        self.logo = QSvgWidget("./symbol_cvut_konturova_verze.svg")
+        self.logo = QSvgWidget(resource_path("symbol_cvut_konturova_verze.svg"))
         self.logo.setFixedSize(200, 153.85)
         self.layout.addWidget(self.logo, alignment=Qt.AlignCenter)
 
@@ -370,13 +399,6 @@ class MainWindow(QMainWindow):
         self.hide()
         self.window = ProcessWindow()
         self.window.show()
-
-
-
-# You need one (and only one) QApplication instance per application.
-# Pass in sys.argv to allow command line arguments for your app.
-# If you know you won't use command line arguments QApplication([]) works too.
-app = QApplication([])
 
 # Create a Qt widget, which will be our window.
 window = MainWindow()
