@@ -1,7 +1,9 @@
 from PySide6.QtCore import QSize, Qt
-from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QMainWindow, QVBoxLayout, QHBoxLayout, QLabel, QCheckBox, QTableWidget, QLineEdit, QFormLayout, QTableWidgetItem, QHeaderView, QMessageBox, QStyle
+from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QMainWindow, QVBoxLayout, QHBoxLayout, QLabel, QCheckBox, QTableWidget, QLineEdit, QFormLayout, QTableWidgetItem, QHeaderView, QMessageBox, QStyle, QGroupBox, QFrame
 from PySide6.QtGui import QDoubleValidator, QIcon, QPixmap
 from PySide6.QtSvgWidgets import QSvgWidget
+import qdarktheme
+
 
 # Only needed for access to command line arguments
 import os
@@ -19,6 +21,8 @@ def resource_path(relative_path):
 # Pass in sys.argv to allow command line arguments for your app.
 # If you know you won't use command line arguments QApplication([]) works too.
 app = QApplication([])
+# Apply the complete dark theme to your Qt App.
+qdarktheme.setup_theme("auto")
 
 main_pixmap = QPixmap(resource_path("symbol_cvut_konturova_verze.ico"))
 main_icon = QIcon(main_pixmap)
@@ -33,36 +37,41 @@ class ProcessWindow(QWidget):
         self.layout = QVBoxLayout()
 
         # Určení požárního rizika
-        self.riziko_label = QLabel("Požární riziko v požárním úseku určeno pomocí")
-        self.riziko_font = self.riziko_label.font()
+        self.riziko_groupbox = QGroupBox("Požární riziko v požárním úseku určeno pomocí")
+        self.riziko_font = self.riziko_groupbox.font()
         self.riziko_font.setBold(True)
-        self.riziko_label.setFont(self.riziko_font)
-        self.layout.addWidget(self.riziko_label)
+        self.riziko_groupbox.setFont(self.riziko_font)
+        
+        self.riziko_layout = QVBoxLayout()
         self.riziko_detail = QLabel("Je potřeba zaškrtnout alespoň jednu z možností")
-        self.layout.addWidget(self.riziko_detail)
+        self.riziko_layout.addWidget(self.riziko_detail)
+        
         ## Checkboxy
         self.taue = QCheckBox("τe ekvivalentní doby trvání požáru")
-        self.layout.addWidget(self.taue)
+        self.riziko_layout.addWidget(self.taue)
         self.tau = QCheckBox("τ pravděpodobné doby trvání požáru")
-        self.layout.addWidget(self.tau)
+        self.riziko_layout.addWidget(self.tau)
+        
+        self.riziko_groupbox.setLayout(self.riziko_layout)
+        self.layout.addWidget(self.riziko_groupbox)
 
         # Vstupní hodnoty pro q
         self.q_label = QLabel("Vstupní hodnoty pro výpočet q")
         self.q_font = self.q_label.font()
         self.q_font.setBold(True)
         self.q_label.setFont(self.q_font)
-        self.q_label.setToolTip("Průměrný tepelný výkon q v MW∙m² odpovídá průměrnému tepelnému výkonu dosaženému hořením skladovaného materiálu na 1 m² odhořívané plochy a určuje se pomocí následující rovnice: <b>q=m∙Hₚ/60</b>. \nV případě výskytu různých materiálů, se stanoví průměrné hodnoty v závislosti na jejich hmotnosti podle rovnice: <b>q=∑mᵢ∙Hᵢ∙Mᵢ/60∙∑Mᵢ</b>.")
+        self.q_label.setToolTip("Průměrný tepelný výkon q v MW∙m² odpovídá průměrnému tepelnému výkonu dosaženému hořením skladovaného materiálu na 1 m² odhořívané plochy. V případě výskytu různých materiálů, se stanoví průměrné hodnoty v závislosti na jejich hmotnosti podle rovnice: <b>q=∑mᵢ∙Hᵢ∙Mᵢ/60∙∑Mᵢ</b>.")
         self.layout.addWidget(self.q_label)
 
-        # Formulář pro vstupní hodnoty a tabulka vedle sebe Q
+        ##8 Formulář pro vstupní hodnoty a tabulka vedle sebe Q
         self.q_layout = QHBoxLayout()
 
-        # Formulář pro vstupní hodnoty Q
+        ## Formulář pro vstupní hodnoty Q
         self.q_form_layout = QFormLayout()
         self.mi_input = QLineEdit()
-        self.mi_input.setToolTip("Hmotnost odhořelá z 1 m² povrchu za 1 minutu i-tého materiálu podle přílohy D ČSN 73 0804 a pro obalové materiály podle ČSN 73 0845.")
+        self.mi_input.setToolTip("Hmotnost odhořelá z 1 m² povrchu za 1 minutu i-tého materiálu podle\npřílohy D ČSN 73 0804 a pro obalové materiály podle přílohy ČSN 73 0845.")
         self.hi_input = QLineEdit()
-        self.hi_input.setToolTip("Průměrná hodnota výhřevnosti i-té hořlavé látky podle ČSN 73 0824.")
+        self.hi_input.setToolTip("Normová hodnota výhřevnosti i-té hořlavé látky podle ČSN 73 0824.")
         self.mi2_input = QLineEdit()
         self.mi2_input.setToolTip("Hmotnost i-té hořlavé látky.")
         self.mi_input.setValidator(QDoubleValidator())
@@ -73,7 +82,7 @@ class ProcessWindow(QWidget):
         self.q_form_layout.addRow("Mᵢ [kg]:", self.mi2_input)
         self.q_layout.addLayout(self.q_form_layout)
 
-        # Tabulka Q
+        ## Tabulka Q
         self.q_table = QTableWidget(self)
         self.q_table.setColumnCount(3)
         self.q_table.setHorizontalHeaderLabels(["mᵢ", "Hᵢ", "Mᵢ"])
@@ -87,7 +96,7 @@ class ProcessWindow(QWidget):
 
         self.layout.addLayout(self.q_layout)
 
-        # Tlačítka Q
+        ## Tlačítka Q
         self.q_butts = QHBoxLayout()
         self.q_butt_plus = QPushButton("Přidat materiál")
         self.q_butt_minus = QPushButton("Odebrat poslední materiál")
@@ -95,35 +104,40 @@ class ProcessWindow(QWidget):
         self.q_butts.addWidget(self.q_butt_minus)
         self.layout.addLayout(self.q_butts)
 
-        # Přidání materiálu do tabulky Q
+        ## Přidání materiálu do tabulky Q
         self.q_butt_plus.clicked.connect(self.add_material_q)
         self.q_butt_minus.clicked.connect(self.remove_material_q)
 
+        # Divider
+        self.divider = QFrame()
+        self.divider.setFrameShape(QFrame.HLine)
+        self.divider.setFrameShadow(QFrame.Sunken)
+        self.layout.addWidget(self.divider)
 
         # Vstupní hodnoty pro p_n
         self.p_label = QLabel("Vstupní hodnoty pro výpočet p<sub>n</sub>")
         self.p_font = self.p_label.font()
         self.p_font.setBold(True)
         self.p_label.setFont(self.p_font)
-        self.p_label.setToolTip("Nahodilé požární zatížení p<sub>n</sub>v kg·m⁻² se určuje podle rovnice <b>p<sub>n</sub>=(∑ʲᵢ₌₁∙Mᵢ∙Kᵢ)/S</b>, která odpovídá rovnici ČSN 73 0804 ed.2.")
+        self.p_label.setToolTip("Nahodilé požární zatížení p<sub>n</sub> v kg·m⁻² určené podle rovnice <b>p<sub>n</sub>=(∑ʲᵢ₌₁∙Mᵢ∙Kᵢ)/S</b>, která odpovídá rovnici (5) ČSN 73 0804")
         self.layout.addWidget(self.p_label)
         
-        # Formulář pro vstupní hodnoty a tabulka vedle sebe
+        ## Formulář pro vstupní hodnoty a tabulka vedle sebe
         self.p_layout = QHBoxLayout()
         
-        # Formulář pro vstupní hodnoty
+        ## Formulář pro vstupní hodnoty
         self.p_form_layout = QFormLayout()
         self.m_input = QLineEdit()
         self.m_input.setToolTip("Hmotnost i-té hořlavé látky.")
         self.k_input = QLineEdit()
-        self.k_input.setToolTip("Součinitel ekvivalentního množství dřeva i-tého druhu hořlavé látky podle ČSN 73 0824.")
+        self.k_input.setToolTip("Součinitel ekvivalentního množství dřeva i-tého druhu hořlavé látky podle ČSN 73 0824.")
         self.m_input.setValidator(QDoubleValidator())
         self.k_input.setValidator(QDoubleValidator())
         self.p_form_layout.addRow("Mᵢ [kg]:", self.m_input)
         self.p_form_layout.addRow("Kᵢ:", self.k_input)
         self.p_layout.addLayout(self.p_form_layout)
         
-        # Tabulka
+        ## Tabulka
         self.p_table = QTableWidget(self)
         self.p_table.setRowCount(0)
         self.p_table.setColumnCount(2)
@@ -134,7 +148,7 @@ class ProcessWindow(QWidget):
         
         self.layout.addLayout(self.p_layout)
         
-        # Tlačítka
+        ## Tlačítka
         self.p_butts = QHBoxLayout()
         self.p_butt_plus = QPushButton("Přidat materiál")
         self.p_butt_minus = QPushButton("Odebrat poslední materiál")
@@ -145,7 +159,12 @@ class ProcessWindow(QWidget):
         # Přidání materiálu do tabulky
         self.p_butt_plus.clicked.connect(self.add_material_p)
         self.p_butt_minus.clicked.connect(self.remove_material_p)
-        
+
+        # Divider
+        self.divider = QFrame()
+        self.divider.setFrameShape(QFrame.HLine)
+        self.divider.setFrameShadow(QFrame.Sunken)
+        self.layout.addWidget(self.divider)        
 
         # Plocha
         self.surface_line_edit = QLineEdit()
@@ -157,33 +176,41 @@ class ProcessWindow(QWidget):
 
         # Tlačítko pro výpočet
         self.calc_butt = QPushButton("Vypočítat")
+        calc_butt_font = self.calc_butt.font()
+        calc_butt_font.setBold(True)
+        self.calc_butt.setFont(calc_butt_font)
         self.layout.addWidget(self.calc_butt, alignment=Qt.AlignCenter)
         self.calc_butt.clicked.connect(self.calculate_q)
         self.calc_butt.clicked.connect(self.calculate_p)        
         self.calc_butt.clicked.connect(self.calculate_skupina_skladu)
 
         # Výstupní hodnoty
-        self.result_label = QLabel("Výstupní hodnoty")
-        self.result_font = self.result_label.font()
+        self.result_groupbox = QGroupBox("Výstupní hodnoty")
+        self.result_font = self.result_groupbox.font()
         self.result_font.setBold(True)
-        self.result_label.setFont(self.result_font)
-        self.layout.addWidget(self.result_label)
+        self.result_groupbox.setFont(self.result_font)
+        
+        self.result_layout = QVBoxLayout()
+        
         ## Výstupní hodnoty text
         self.q_result = QLineEdit()
         self.q_result.setReadOnly(True)
         self.pn_result = QLineEdit()
         self.pn_result.setReadOnly(True)
-        self.result_layout = QFormLayout()
-        self.result_layout.addRow("q [MW·m<sup>2</sup>]:", self.q_result)
-        self.result_layout.addRow("p<sub>n</sub> [kg·m<sup>-2</sup>]:", self.pn_result)
-        self.layout.addLayout(self.result_layout)
-
+        self.result_form_layout = QFormLayout()
+        self.result_form_layout.addRow("q [MW·m<sup>-2</sup>]:", self.q_result)
+        self.result_form_layout.addRow("p<sub>n</sub> [kg·m<sup>-2</sup>]:", self.pn_result)
+        self.result_layout.addLayout(self.result_form_layout)
+        
         # Skupina skladů
         self.skupina_result = QLineEdit()
         self.skupina_result.setReadOnly(True)
         self.skupina_layout = QFormLayout()
         self.skupina_layout.addRow("<b>Skupina provozů skladů:</b>", self.skupina_result)
-        self.layout.addLayout(self.skupina_layout)
+        self.result_layout.addLayout(self.skupina_layout)
+        
+        self.result_groupbox.setLayout(self.result_layout)
+        self.layout.addWidget(self.result_groupbox)
         
         self.setLayout(self.layout)
 
@@ -235,33 +262,34 @@ class ProcessWindow(QWidget):
     def error_missing_data(self):
         error_dialog = QMessageBox()
         error_dialog.setIcon(QMessageBox.Critical)
-        error_dialog.setText("Chyba")
+        error_dialog.setText("Chybějící hodnoty")
         error_dialog.setInformativeText("Všechny hodnoty musí být vyplněny.")
         error_dialog.setWindowTitle("Chyba")
+        error_dialog.setWindowIcon(main_icon)
         error_dialog.exec()
 
     def error_missing_tau(self):
         error_dialog = QMessageBox()
         error_dialog.setIcon(QMessageBox.Critical)
-        error_dialog.setText("Chyba")
+        error_dialog.setText("Chybějící určení požárního rizika")
         error_dialog.setInformativeText("Musí být zaškrtnuto alespoň jedno určení požárního rizika.")
         error_dialog.setWindowTitle("Chyba")
+        error_dialog.setWindowIcon(main_icon)
         error_dialog.exec()
 
     def calculate_q(self):
-        mi_sum = sum(float(self.q_table.item(row, 0).text().replace(',', '.')) for row in range(self.q_table.rowCount()))
-        hi_sum = sum(float(self.q_table.item(row, 1).text().replace(',', '.')) for row in range(self.q_table.rowCount()))
         mi2_sum = sum(float(self.q_table.item(row, 2).text().replace(',', '.')) for row in range(self.q_table.rowCount()))
-        
-        if mi_sum != 0:
-            q_value = (mi_sum * hi_sum * mi2_sum) / (60 * mi2_sum)
+
+        if mi2_sum != 0:
+            q_value = sum(float(self.q_table.item(row, 0).text().replace(',', '.')) * 
+                          float(self.q_table.item(row, 1).text().replace(',', '.')) * 
+                          float(self.q_table.item(row, 2).text().replace(',', '.')) 
+                          for row in range(self.q_table.rowCount())) / (60 * mi2_sum)
             self.q_result.setText(f"{q_value:.2f}".replace('.', ','))
         else:
             self.q_result.setText("0")
 
     def calculate_p(self):
-        mi_sum_p = sum(float(self.p_table.item(row, 0).text().replace(',', '.')) for row in range(self.p_table.rowCount()))
-        ki_sum_p = sum(float(self.p_table.item(row, 1).text().replace(',', '.')) for row in range(self.p_table.rowCount()))
         surface_value = self.surface_line_edit.text().replace(',', '.')
         
         if not surface_value:
@@ -274,11 +302,11 @@ class ProcessWindow(QWidget):
             self.error_missing_data()
             return
         
-        if mi_sum_p != 0:
-            pn_value = (mi_sum_p * ki_sum_p) / S
-            self.pn_result.setText(f"{pn_value:.2f}".replace('.', ','))
-        else:
-            self.pn_result.setText("0")
+        pn_value = sum(float(self.p_table.item(row, 0).text().replace(',', '.')) * 
+                       float(self.p_table.item(row, 1).text().replace(',', '.')) 
+                       for row in range(self.p_table.rowCount())) / S
+        
+        self.pn_result.setText(f"{pn_value:.3f}".replace('.', ','))
     
     def calculate_skupina_skladu(self):
         if not (self.taue.isChecked() or self.tau.isChecked()):
