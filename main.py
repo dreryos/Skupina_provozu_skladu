@@ -335,7 +335,7 @@ class ProcessWindow(QWidget):
             q_value = float(self.q_result.text().replace(',', '.'))
         elif self.tau.isChecked():
             q_value = float(self.q_result.text().replace(',', '.'))
-            pn_value = float(self.pn_result.text().replace(',', '.'))
+            pn_value = float(self.pn_result.text().replace(',', '.')) if self.pn_result.text() != "N/A" else 0
         else:
             self.error_missing_tau()
             return
