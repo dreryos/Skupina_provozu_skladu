@@ -60,7 +60,7 @@ class ProcessWindow(QWidget):
         self.q_font = self.q_label.font()
         self.q_font.setBold(True)
         self.q_label.setFont(self.q_font)
-        self.q_label.setToolTip("Průměrný tepelný výkon q v MW∙m² odpovídá průměrnému tepelnému výkonu dosaženému hořením skladovaného materiálu na 1 m² odhořívané plochy. V případě výskytu různých materiálů, se stanoví průměrné hodnoty v závislosti na jejich hmotnosti podle rovnice: <b>q=∑mᵢ∙Hᵢ∙Mᵢ/60∙∑Mᵢ</b>.")
+        self.q_label.setToolTip("Průměrný tepelný výkon q v MW∙m⁻² odpovídá průměrnému tepelnému výkonu dosaženému hořením skladovaného materiálu na 1 m² odhořívané plochy. V případě výskytu různých materiálů, se stanoví průměrné hodnoty v závislosti na jejich hmotnosti podle rovnice: <b>q=∑mᵢ∙Hᵢ∙Mᵢ/60∙∑Mᵢ</b>.")
         self.layout.addWidget(self.q_label)
 
         ##8 Formulář pro vstupní hodnoty a tabulka vedle sebe Q
@@ -69,7 +69,7 @@ class ProcessWindow(QWidget):
         ## Formulář pro vstupní hodnoty Q
         self.q_form_layout = QFormLayout()
         self.mi_input = QLineEdit()
-        self.mi_input.setToolTip("Hmotnost odhořelá z 1 m² povrchu za 1 minutu i-tého materiálu podle\npřílohy D ČSN 73 0804 a pro obalové materiály podle přílohy ČSN 73 0845.")
+        self.mi_input.setToolTip("Hmotnost odhořelá z 1 m² povrchu za 1 minutu i-tého materiálu podle\npřílohy D ČSN 73 0804 a pro obalové materiály podle přílohy C ČSN 73 0845.")
         self.hi_input = QLineEdit()
         self.hi_input.setToolTip("Normová hodnota výhřevnosti i-té hořlavé látky podle ČSN 73 0824.")
         self.mi2_input = QLineEdit()
@@ -285,7 +285,7 @@ class ProcessWindow(QWidget):
                           float(self.q_table.item(row, 1).text().replace(',', '.')) * 
                           float(self.q_table.item(row, 2).text().replace(',', '.')) 
                           for row in range(self.q_table.rowCount())) / (60 * mi2_sum)
-            self.q_result.setText(f"{q_value:.2f}".replace('.', ','))
+            self.q_result.setText(f"{q_value:.3f}".replace('.', ','))
         else:
             self.q_result.setText("0")
 
@@ -317,7 +317,7 @@ class ProcessWindow(QWidget):
         pn_value = float(self.pn_result.text().replace(',', '.'))
 
         if self.taue.isChecked():
-            if q_value <= 0.5:
+            if q_value <= 0.05:
                 self.skupina_result.setText("I")
             elif q_value <= 0.1:
                 self.skupina_result.setText("II")
@@ -334,7 +334,7 @@ class ProcessWindow(QWidget):
             else:
                 self.skupina_result.setText("N/A")
         elif self.tau.isChecked():
-            if q_value <= 0.5 and pn_value <= 90:
+            if q_value <= 0.05 and pn_value <= 90:
                 self.skupina_result.setText("I")
             elif q_value <= 0.1 and pn_value <= 180:
                 self.skupina_result.setText("II")
