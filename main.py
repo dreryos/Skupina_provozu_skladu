@@ -50,7 +50,7 @@ class ProcessWindow(QWidget):
         self.riziko_groupbox.setFont(self._create_bold_font())
         
         self.riziko_layout = QVBoxLayout()
-        self.riziko_layout.addWidget(QLabel("Je potřeba zaškrtnout alespoň jednu z možností"))
+        self.riziko_layout.addWidget(QLabel("Je potřeba zaškrtnout jednu z možností"))
         
         self.taue = QRadioButton("τe ekvivalentní doby trvání požáru")
         self.tau = QRadioButton("τ pravděpodobné doby trvání požáru")
