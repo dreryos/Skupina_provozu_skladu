@@ -1,5 +1,5 @@
 from PySide6.QtCore import QSize, Qt
-from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QMainWindow, QVBoxLayout, QHBoxLayout, QLabel, QCheckBox, QTableWidget, QLineEdit, QFormLayout, QTableWidgetItem, QHeaderView, QMessageBox, QStyle, QGroupBox, QFrame
+from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QMainWindow, QVBoxLayout, QHBoxLayout, QLabel, QCheckBox, QTableWidget, QLineEdit, QFormLayout, QTableWidgetItem, QHeaderView, QMessageBox, QStyle, QGroupBox, QFrame, QButtonGroup, QRadioButton
 from PySide6.QtGui import QDoubleValidator, QIcon, QPixmap
 from PySide6.QtSvgWidgets import QSvgWidget
 import qdarktheme
@@ -32,7 +32,7 @@ class ProcessWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowIcon(main_icon)
-        self.setWindowTitle("Výpočet skupiny provozu skladů")
+        self.setWindowTitle("Výpočet skupiny provozů skladů")
 
         self.layout = QVBoxLayout()
 
@@ -46,10 +46,15 @@ class ProcessWindow(QWidget):
         self.riziko_detail = QLabel("Je potřeba zaškrtnout alespoň jednu z možností")
         self.riziko_layout.addWidget(self.riziko_detail)
         
-        ## Checkboxy
-        self.taue = QCheckBox("τe ekvivalentní doby trvání požáru")
+        ## Radiobuttons
+        self.taue = QRadioButton("τe ekvivalentní doby trvání požáru")
+        self.tau = QRadioButton("τ pravděpodobné doby trvání požáru")
+        
+        self.riziko_button_group = QButtonGroup(self)
+        self.riziko_button_group.addButton(self.taue)
+        self.riziko_button_group.addButton(self.tau)
+        
         self.riziko_layout.addWidget(self.taue)
-        self.tau = QCheckBox("τ pravděpodobné doby trvání požáru")
         self.riziko_layout.addWidget(self.tau)
         
         self.riziko_groupbox.setLayout(self.riziko_layout)
@@ -63,7 +68,7 @@ class ProcessWindow(QWidget):
         self.q_label.setToolTip("Průměrný tepelný výkon q v MW∙m⁻² odpovídá průměrnému tepelnému výkonu dosaženému hořením skladovaného materiálu na 1 m² odhořívané plochy. V případě výskytu různých materiálů, se stanoví průměrné hodnoty v závislosti na jejich hmotnosti podle rovnice: <b>q=∑mᵢ∙Hᵢ∙Mᵢ/60∙∑Mᵢ</b>.")
         self.layout.addWidget(self.q_label)
 
-        ##8 Formulář pro vstupní hodnoty a tabulka vedle sebe Q
+        ## Formulář pro vstupní hodnoty a tabulka vedle sebe Q
         self.q_layout = QHBoxLayout()
 
         ## Formulář pro vstupní hodnoty Q
@@ -180,9 +185,7 @@ class ProcessWindow(QWidget):
         calc_butt_font.setBold(True)
         self.calc_butt.setFont(calc_butt_font)
         self.layout.addWidget(self.calc_butt, alignment=Qt.AlignCenter)
-        self.calc_butt.clicked.connect(self.calculate_q)
-        self.calc_butt.clicked.connect(self.calculate_p)        
-        self.calc_butt.clicked.connect(self.calculate_skupina_skladu)
+        self.calc_butt.clicked.connect(self.on_calc_butt_clicked)
 
         # Výstupní hodnoty
         self.result_groupbox = QGroupBox("Výstupní hodnoty")
@@ -277,6 +280,19 @@ class ProcessWindow(QWidget):
         error_dialog.setWindowIcon(main_icon)
         error_dialog.exec()
 
+    def on_calc_butt_clicked(self):
+        self.calculate_q()
+        try:
+            self.calculate_p()
+        except Exception:
+            self.pn_result.setText("N/A")
+        
+        if self.taue.isChecked() or self.tau.isChecked():
+            self.calculate_skupina_skladu()
+        else:
+            self.error_missing_tau()
+        
+
     def calculate_q(self):
         mi2_sum = sum(float(self.q_table.item(row, 2).text().replace(',', '.')) for row in range(self.q_table.rowCount()))
 
@@ -292,14 +308,20 @@ class ProcessWindow(QWidget):
     def calculate_p(self):
         surface_value = self.surface_line_edit.text().replace(',', '.')
         
-        if not surface_value:
-            self.error_missing_data()
-            return
-        
         try:
             S = float(surface_value)
         except ValueError:
-            self.error_missing_data()
+            if self.tau.isChecked():
+                self.error_missing_data()
+            else:
+                self.pn_result.setText("N/A")
+            return
+        
+        if self.p_table.rowCount() == 0:
+            if self.tau.isChecked():
+                self.error_missing_data()
+            else:
+                self.pn_result.setText("N/A")
             return
         
         pn_value = sum(float(self.p_table.item(row, 0).text().replace(',', '.')) * 
@@ -309,13 +331,15 @@ class ProcessWindow(QWidget):
         self.pn_result.setText(f"{pn_value:.3f}".replace('.', ','))
     
     def calculate_skupina_skladu(self):
-        if not (self.taue.isChecked() or self.tau.isChecked()):
+        if self.taue.isChecked():
+            q_value = float(self.q_result.text().replace(',', '.'))
+        elif self.tau.isChecked():
+            q_value = float(self.q_result.text().replace(',', '.'))
+            pn_value = float(self.pn_result.text().replace(',', '.'))
+        else:
             self.error_missing_tau()
             return
-
-        q_value = float(self.q_result.text().replace(',', '.'))
-        pn_value = float(self.pn_result.text().replace(',', '.'))
-
+        
         if self.taue.isChecked():
             if q_value <= 0.05:
                 self.skupina_result.setText("I")
@@ -357,14 +381,14 @@ class MainWindow(QMainWindow):
         super().__init__()
     
         self.setWindowIcon(main_icon)
-        self.setWindowTitle("Skupina provozu skladů")
+        self.setWindowTitle("Skupina provozů skladů")
 
         # Horizontální layout
         self.layout = QVBoxLayout()
 
         # Text v hlavním okne
         ## Titulek
-        self.tit_label = QLabel("Skupina provozu skladů")
+        self.tit_label = QLabel("Skupina provozů skladů")
         self.tit_label.setStyleSheet("QLabel { color: #0065bd; }")
         self.tit_font = self.tit_label.font()
         self.tit_font.setPointSize(30)
