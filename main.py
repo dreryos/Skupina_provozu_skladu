@@ -48,6 +48,7 @@ class ProcessWindow(QWidget):
     def _setup_riziko_groupbox(self):
         self.riziko_groupbox = QGroupBox("Požární riziko v požárním úseku určeno pomocí")
         self.riziko_groupbox.setFont(self._create_bold_font())
+        self.riziko_groupbox.setToolTip("U požárních úseků, ve kterých bylo požární riziko určeno pomocí τe,\nse posuzuje jen průměrný tepelný výkon (q). U požárních úseků,\nve kterých bylo požární riziko určeno pomocí τ se posuzují obě kritéria,\npřičemž skupina provozů skladů se určí podle kritéria s nejvyšší skupinou.")
         
         self.riziko_layout = QVBoxLayout()
         self.riziko_layout.addWidget(QLabel("Je potřeba zaškrtnout jednu z možností"))
@@ -66,22 +67,25 @@ class ProcessWindow(QWidget):
         self.layout.addWidget(self.riziko_groupbox)
 
     def _setup_q_inputs(self):
+        #TODO: kouknout jestli jde do setTool jde dát obrázek PNG/SVG
         self.q_label = QLabel("Vstupní hodnoty pro výpočet q")
         self.q_label.setFont(self._create_bold_font())
-        self.q_label.setToolTip("Průměrný tepelný výkon q v MW∙m⁻² odpovídá průměrnému tepelnému výkonu dosaženému hořením skladovaného materiálu na 1 m² odhořívané plochy. V případě výskytu různých materiálů, se stanoví průměrné hodnoty v závislosti na jejich hmotnosti podle rovnice: <b>q=∑mᵢ∙Hᵢ∙Mᵢ/60∙∑Mᵢ</b>.")
+        self.q_label.setToolTip("Průměrný tepelný výkon q v MW∙m⁻² odpovídá průměrnému tepelnému výkonu dosaženému hořením skladovaného materiálu na 1 m² odhořívané plochy. V případě výskytu různých materiálů, se stanoví průměrné hodnoty v závislosti na jejich hmotnosti podle rovnice: <b>q=(((∑Mᵢ∙mᵢ)/∑Mᵢ)∙((∑Mᵢ∙kₚ₁ᵢ∙Hᵢ)/∑Mᵢ))/60</b>.")
         self.layout.addWidget(self.q_label)
 
         self.q_layout = QHBoxLayout()
         self.q_form_layout = QFormLayout()
         self.mi_input = self._create_double_line_edit("Hmotnost odhořelá z 1 m² povrchu za 1 minutu i-tého materiálu podle\npřílohy D ČSN 73 0804 a pro obalové materiály podle přílohy C ČSN 73 0845.")
         self.hi_input = self._create_double_line_edit("Normová hodnota výhřevnosti i-té hořlavé látky podle ČSN 73 0824.")
+        self.kp1_input = self._create_double_line_edit("Součinitel vyjadřující podíl požární výhřevnosti Hₚ a výhřevnosti H téže i-té hořlavé látky, podle ČSN 73 0824.")
         self.mi2_input = self._create_double_line_edit("Hmotnost i-té hořlavé látky.")
         self.q_form_layout.addRow("mᵢ [kg·m⁻²·min⁻¹]:", self.mi_input)
         self.q_form_layout.addRow("Hᵢ [MJ·kg⁻¹]:", self.hi_input)
+        self.q_form_layout.addRow("kₚ₁ᵢ []:", self.kp1_input)
         self.q_form_layout.addRow("Mᵢ [kg]:", self.mi2_input)
         self.q_layout.addLayout(self.q_form_layout)
 
-        self.q_table = self._create_table(["mᵢ", "Hᵢ", "Mᵢ"], 3)
+        self.q_table = self._create_table(["mᵢ", "Hᵢ", "kₚ₁", "Mᵢ"], 4)
         self.q_layout.addWidget(self.q_table)
         self.layout.addLayout(self.q_layout)
 
@@ -103,7 +107,7 @@ class ProcessWindow(QWidget):
 
         self.p_label = QLabel("Vstupní hodnoty pro výpočet p<sub>n</sub>")
         self.p_label.setFont(self._create_bold_font())
-        self.p_label.setToolTip("Nahodilé požární zatížení p<sub>n</sub> v kg·m⁻² určené podle rovnice <b>p<sub>n</sub>=(∑ʲᵢ₌₁∙Mᵢ∙Kᵢ)/S</b>, která odpovídá rovnici (5) ČSN 73 0804")
+        self.p_label.setToolTip("Nahodilé požární zatížení p<sub>n</sub> v kg·m⁻² určené podle rovnice <b>p<sub>n</sub>=(∑Mᵢ∙Kᵢ)/S</b>, která odpovídá rovnici (5) ČSN 73 0804")
         self.layout.addWidget(self.p_label)
         
         self.p_layout = QHBoxLayout()
@@ -197,7 +201,7 @@ class ProcessWindow(QWidget):
         return divider
 
     def add_material_q(self):
-        self._add_material(self.q_table, [self.mi_input, self.hi_input, self.mi2_input])
+        self._add_material(self.q_table, [self.mi_input, self.hi_input, self.kp1_input, self.mi2_input])
 
     def remove_material_q(self):
         self._remove_material(self.q_table)
@@ -250,13 +254,12 @@ class ProcessWindow(QWidget):
             self._show_error("Chybějící určení požárního rizika", "Musí být zaškrtnuto alespoň jedno určení požárního rizika.")
 
     def calculate_q(self):
-        mi2_sum = sum(float(self.q_table.item(row, 2).text().replace(',', '.')) for row in range(self.q_table.rowCount()))
+        mi2_sum = sum(float(self.q_table.item(row, 3).text().replace(',', '.')) for row in range(self.q_table.rowCount()))
+        mi2_mi_sum = sum(float(self.q_table.item(row, 3).text().replace(',', '.')) * float(self.q_table.item(row, 0).text().replace(',', '.')) for row in range(self.q_table.rowCount()))
+        mi2_kp1_Hi_sum = sum(float(self.q_table.item(row, 3).text().replace(',', '.')) * float(self.q_table.item(row, 2).text().replace(',', '.')) * float(self.q_table.item(row, 1).text().replace(',', '.')) for row in range(self.q_table.rowCount()))
 
         if mi2_sum != 0:
-            q_value = sum(float(self.q_table.item(row, 0).text().replace(',', '.')) * 
-                          float(self.q_table.item(row, 1).text().replace(',', '.')) * 
-                          float(self.q_table.item(row, 2).text().replace(',', '.')) 
-                          for row in range(self.q_table.rowCount())) / (60 * mi2_sum)
+            q_value = (mi2_mi_sum/mi2_sum) * (mi2_kp1_Hi_sum/mi2_sum) / 60
             self.q_result.setText(f"{q_value:.3f}".replace('.', ','))
         else:
             self.q_result.setText("0")
