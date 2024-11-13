@@ -81,7 +81,7 @@ class ProcessWindow(QWidget):
         self.mi2_input = self._create_double_line_edit("Hmotnost i-té hořlavé látky.")
         self.q_form_layout.addRow("mᵢ [kg·m⁻²·min⁻¹]:", self.mi_input)
         self.q_form_layout.addRow("Hᵢ [MJ·kg⁻¹]:", self.hi_input)
-        self.q_form_layout.addRow("kₚ₁ᵢ []:", self.kp1_input)
+        self.q_form_layout.addRow("kₚ₁ᵢ [-]:", self.kp1_input)
         self.q_form_layout.addRow("Mᵢ [kg]:", self.mi2_input)
         self.q_layout.addLayout(self.q_form_layout)
 
@@ -115,7 +115,7 @@ class ProcessWindow(QWidget):
         self.m_input = self._create_double_line_edit("Hmotnost i-té hořlavé látky.")
         self.k_input = self._create_double_line_edit("Součinitel ekvivalentního množství dřeva i-tého druhu hořlavé látky podle ČSN 73 0824.")
         self.p_form_layout.addRow("Mᵢ [kg]:", self.m_input)
-        self.p_form_layout.addRow("Kᵢ:", self.k_input)
+        self.p_form_layout.addRow("Kᵢ [-]:", self.k_input)
         self.p_layout.addLayout(self.p_form_layout)
         
         self.p_table = self._create_table(["Mᵢ", "Kᵢ"], 2)
