@@ -48,7 +48,7 @@ class ProcessWindow(QWidget):
     def _setup_riziko_groupbox(self):
         self.riziko_groupbox = QGroupBox("Požární riziko v požárním úseku určeno pomocí")
         self.riziko_groupbox.setFont(self._create_bold_font())
-        self.riziko_groupbox.setToolTip("U požárních úseků, ve kterých bylo požární riziko určeno pomocí τe,\nse posuzuje jen průměrný tepelný výkon (q). U požárních úseků,\nve kterých bylo požární riziko určeno pomocí τ se posuzují obě kritéria,\npřičemž skupina provozů skladů se určí podle kritéria s nejvyšší skupinou.")
+        self.riziko_groupbox.setToolTip("U požárních úseků, ve kterých bylo požární riziko určeno pomocí τe,\nse posuzuje jen průměrný tepelný výkon (q). U požárních úseků,\nve kterých bylo požární riziko určeno pomocí τ se posuzuje\nprůměrný tepelný výkon (q) i nahodilé požární zatížení (pn),\npřičemž skupina provozů skladů se určí podle kritéria s nejvyšší skupinou.")
         
         self.riziko_layout = QVBoxLayout()
         self.riziko_layout.addWidget(QLabel("Je potřeba zaškrtnout jednu z možností"))
@@ -138,7 +138,7 @@ class ProcessWindow(QWidget):
     def _setup_surface_input(self):
         self.layout.addWidget(self._create_divider())
 
-        self.surface_line_edit = self._create_double_line_edit("Celková půdorysná plocha požárního úseku.")
+        self.surface_line_edit = self._create_double_line_edit("Celková půdorysná plocha požárního úseku, případně půdorysná plocha posuzované části požárního úseku.")
         self.surface_layout = QFormLayout()
         self.surface_layout.addRow("S [m<sup>2</sup>]:", self.surface_line_edit)
         self.layout.addLayout(self.surface_layout)
@@ -354,6 +354,13 @@ class MainWindow(QMainWindow):
         self.tit_label.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
         self.layout.addWidget(self.tit_label)
 
+        # Subtitle
+        self.subtit_label = QLabel("Sklady tuhých látek")
+        self.subtit_label.setStyleSheet("QLabel { color: #0065bd; }")
+        self.subtit_label.setFont(self._create_font(20, False))
+        self.subtit_label.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+        self.layout.addWidget(self.subtit_label)
+
         # Info text
         self.info_label = QLabel("Program byl vytvořen v rámci diplomové práce.")
         self.info_label.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
@@ -392,7 +399,7 @@ class MainWindow(QMainWindow):
         self.layout.addWidget(self.lib_label)
 
         # Fixed window size
-        self.setFixedSize(QSize(495, 460))
+        self.setFixedSize(QSize(495, 480))
 
         # Set the central widget of the Window.
         self.widget = QWidget()
